@@ -38,6 +38,7 @@ class ItemGQLType(DjangoObjectType):
             'name': ['exact', 'icontains', 'istartswith'],
             'package': ['exact', 'icontains', 'istartswith'],
             'type': ['exact'],
+            'itemcategory': ['exact'],
         }
         connection_class = ExtendedConnection
 

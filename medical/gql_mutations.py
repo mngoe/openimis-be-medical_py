@@ -73,6 +73,7 @@ class ItemOrServiceInputType(OpenIMISMutation.Input):
     patient_categories = graphene.List(of_type=PatientCategoriesEnum, required=False)
     frequency = graphene.Decimal(required=False)
     price = graphene.Decimal(required=True)
+    itemcategory = graphene.String(required=True)
 
 
 class ServiceInputType(ItemOrServiceInputType):
@@ -102,6 +103,7 @@ def reset_item_or_service_before_update(item_service):
         "quantity", # item only
         "packagetype", #service only
         "manualPrice", #service only
+        "itemcategory",
     ]
     for field in fields:
         if hasattr(item_service, field):

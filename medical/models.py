@@ -59,6 +59,7 @@ class Item(VersionedModel):
     patient_category = models.SmallIntegerField(db_column='ItemPatCat')
     audit_user_id = models.IntegerField(db_column='AuditUserID')
     # row_id = models.BinaryField(db_column='RowID', blank=True, null=True)
+    itemcategory = models.CharField(db_column='ItemCategory', max_length=100,  blank=True, null=True)
 
     def __str__(self):
         return self.code + " " + self.name
@@ -86,7 +87,7 @@ class Item(VersionedModel):
         return queryset
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'tblItems'
 
     TYPE_DRUG = "D"
