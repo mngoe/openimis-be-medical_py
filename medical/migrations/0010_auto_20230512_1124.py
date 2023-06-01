@@ -9,7 +9,7 @@ import uuid
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('medical', '0008_auto_20220805_2108'),
+        ('medical', '0009_auto_20220829_2102'),
     ]
 
     operations = [
