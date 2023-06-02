@@ -13,9 +13,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # migrations.AddField(
-        #     model_name='item',
-        #     name='itemcategory',
-        #     field=models.CharField(blank=True, db_column='ItemCategory', max_length=100, null=True),
-        # )
+        migrations.AddField(
+            model_name='item',
+            name='itemcategory',
+            field=models.CharField(blank=True, db_column='ItemCategory', max_length=100, null=True),
+        )
     ]
