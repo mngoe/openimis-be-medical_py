@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
                 ('qty_provided', models.IntegerField(blank=True, db_column='qty', null=True)),
                 ('pcpDate', models.DateTimeField(blank=True, db_column='created_date', default=django.utils.timezone.now, null=True)),
                 ('price_asked', models.DecimalField(blank=True, db_column='price', decimal_places=2, max_digits=18, null=True)),
-                ('item', models.ForeignKey(db_column='ItemID', on_delete=django.db.models.deletion.DO_NOTHING, related_name='item', to='medical.Item')),
+                ('item', models.ForeignKey(db_column='ItemID', on_delete=django.db.models.deletion.DO_NOTHING, related_name='itemsServices', to='medical.Item')),
                 ('servicelinkedItem', models.ForeignKey(db_column='ServiceID', on_delete=django.db.models.deletion.DO_NOTHING, related_name='servicesLinked', to='medical.Service')),
                 ('status', models.BooleanField(default=True)),
             ],
