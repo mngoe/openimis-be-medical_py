@@ -13,6 +13,7 @@ import core
 from medical.apps import MedicalConfig
 from medical.services import set_item_or_service_deleted
 from medical import models as medical_models
+from program import models as program_models
 
 class Diagnosis(core_models.VersionedModel):
     id = models.AutoField(db_column='ICDID', primary_key=True)
@@ -172,6 +173,7 @@ class Service(VersionedModel, ItemOrService):
     care_type = models.CharField(db_column='ServCareType', max_length=1)
     frequency = models.SmallIntegerField(db_column='ServFrequency', blank=True, null=True)
     patient_category = models.SmallIntegerField(db_column='ServPatCat', default="15")
+    program = models.ManyToManyField(program_models.Program)
 
     # validity_from = fields.DateTimeField(db_column='ValidityFrom', blank=True, null=True)
     # validity_to = fields.DateTimeField(db_column='ValidityTo', blank=True, null=True)
