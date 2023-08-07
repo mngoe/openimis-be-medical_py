@@ -71,6 +71,7 @@ class Item(VersionedModel, ItemOrService):
     patient_category = models.SmallIntegerField(db_column='ItemPatCat')
     audit_user_id = models.IntegerField(db_column='AuditUserID')
     # row_id = models.BinaryField(db_column='RowID', blank=True, null=True)
+    program = models.ManyToManyField(program_models.Program)
 
     def __bool__(self):
         return self.code is not None and len(self.code) >= 1
@@ -133,7 +134,7 @@ class Item(VersionedModel, ItemOrService):
             set_item_or_service_deleted(self, "item")
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'tblItems'
 
     TYPE_DRUG = "D"

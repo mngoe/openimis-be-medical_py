@@ -291,6 +291,7 @@ class DeleteServiceMutation(OpenIMISMutation):
 class ItemInputType(ItemOrServiceInputType):
     package = graphene.String()
     quantity = graphene.Decimal()
+    programs = graphene.List(graphene.Int, required=True)
 
 class CreateItemMutation(CreateOrUpdateItemOrServiceMutation):
     _mutation_module = "medical"
