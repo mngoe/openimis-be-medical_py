@@ -172,6 +172,10 @@ def update_or_create_item_or_service(data, user, item_service_model):
             check_if_code_already_exists(data, item_service_model)
             item_service = item_service_model.objects.create(**data)
     
+    if item_service:
+        reset_item_or_service_before_update(item_service)
+        [setattr(item_service, key, data[key]) for key in data]
+        item_service.save()
     item_service_sub = 0
     item_service_sub += process_items_relations(user, item_service, items)
     service_service_sub = 0
