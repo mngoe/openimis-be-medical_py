@@ -71,7 +71,13 @@ class Item(VersionedModel, ItemOrService):
     patient_category = models.SmallIntegerField(db_column='ItemPatCat')
     audit_user_id = models.IntegerField(db_column='AuditUserID')
     # row_id = models.BinaryField(db_column='RowID', blank=True, null=True)
-    program = models.ManyToManyField(program_models.Program)
+    program = models.ForeignKey(
+        program_models.Program,
+        models.DO_NOTHING,
+        db_column='program',
+        related_name="item_program",
+        null=True
+    )
 
     def __bool__(self):
         return self.code is not None and len(self.code) >= 1
@@ -174,7 +180,13 @@ class Service(VersionedModel, ItemOrService):
     care_type = models.CharField(db_column='ServCareType', max_length=1)
     frequency = models.SmallIntegerField(db_column='ServFrequency', blank=True, null=True)
     patient_category = models.SmallIntegerField(db_column='ServPatCat', default="15")
-    program = models.ManyToManyField(program_models.Program)
+    program = models.ForeignKey(
+        program_models.Program,
+        models.DO_NOTHING,
+        db_column='program',
+        related_name="service_program",
+        null=True
+    )
 
     # validity_from = fields.DateTimeField(db_column='ValidityFrom', blank=True, null=True)
     # validity_to = fields.DateTimeField(db_column='ValidityTo', blank=True, null=True)

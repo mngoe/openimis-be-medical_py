@@ -86,7 +86,7 @@ class ServiceInputType(ItemOrServiceInputType):
     category = graphene.String(required=False)
     items = graphene.List(ServiceItemInputType, required=False)
     services = graphene.List(ServiceServiceInputType, required=False)
-    programs = graphene.List(graphene.Int, required=True)
+    program = graphene.Int(required=True)
 
 
 def reset_item_or_service_before_update(item_service):
@@ -118,7 +118,7 @@ def update_or_create_item_or_service(data, user, item_service_model):
     services = data.pop('services') if 'services' in data else []
     client_mutation_id = data.pop('client_mutation_id', None)
     data.pop('client_mutation_label', None)
-    programs = data.pop('programs', None)
+    data["program"] = program_models.Program.objects.get(idProgram=data["program"])
     item_service_uuid = data.pop('uuid') if 'uuid' in data else None
     # update_or_create(uuid=service_uuid, ...)
     # doesn't work because of explicit attempt to set null to uuid!
@@ -180,10 +180,6 @@ def update_or_create_item_or_service(data, user, item_service_model):
     item_service_sub += process_items_relations(user, item_service, items)
     service_service_sub = 0
     service_service_sub += process_services_relations(user, item_service, services)
-    if programs:
-        program_list = program_models.Program.objects.filter(idProgram__in=programs)
-        if program_list:
-            item_service.program.set(programs)
     item_service.save()
     
     if client_mutation_id:
@@ -295,7 +291,7 @@ class DeleteServiceMutation(OpenIMISMutation):
 class ItemInputType(ItemOrServiceInputType):
     package = graphene.String()
     quantity = graphene.Decimal()
-    programs = graphene.List(graphene.Int, required=True)
+    program = graphene.Int(required=True)
 
 class CreateItemMutation(CreateOrUpdateItemOrServiceMutation):
     _mutation_module = "medical"
