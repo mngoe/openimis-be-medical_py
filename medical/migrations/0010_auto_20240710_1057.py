@@ -15,53 +15,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        #migrations.RemoveField(
-         #   model_name='item',
-          #  name='pat_cat',
-        #),
-        #migrations.RemoveField(
-         #   model_name='item',
-          #  name='row_id',
-        #),
-        #migrations.AddField(
-         #   model_name='item',
-          #  name='patient_category',
-           # field=models.SmallIntegerField(db_column='ItemPatCat', default=django.utils.timezone.now),
-           # preserve_default=False,
-        #),
-        #migrations.AddField(
-         #   model_name='item',
-          #  name='quantity',
-           # field=models.DecimalField(db_column='Quantity', decimal_places=2, max_digits=18, null=True),
-        #),
-        #migrations.AddField(
-         #   model_name='item',
-          #  name='uuid',
-           # field=models.CharField(db_column='ItemUUID', default=uuid.uuid4, max_length=36, unique=True),
-        #),
-        #migrations.AlterField(
-         #   model_name='item',
-          #  name='validity_from',
-           # field=core.fields.DateTimeField(db_column='ValidityFrom', default=datetime.datetime.now),
-        #),
         migrations.AlterField(
             model_name='service',
             name='code',
             field=models.CharField(db_column='ServCode', max_length=20),
-        ),
-        #migrations.AlterField(
-         #   model_name='serviceitem',
-          #  name='id',
-           # field=models.AutoField(db_column='idPCP', primary_key=True, serialize=False),
-        #),
-        #migrations.AlterField(
-         #   model_name='serviceservice',
-          #  name='id',
-           # field=models.AutoField(db_column='idSCP', primary_key=True, serialize=False),
-        #),
-        #migrations.AlterField(
-         #   model_name='serviceservice',
-          #  name='servicelinkedService',
-           # field=models.ForeignKey(db_column='ServiceLinked', on_delete=django.db.models.deletion.DO_NOTHING, to='medical.service'),
-        #),
+        )
     ]
