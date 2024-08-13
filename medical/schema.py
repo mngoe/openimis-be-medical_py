@@ -39,6 +39,7 @@ class ItemGQLType(DjangoObjectType):
             'name': ['exact', 'icontains', 'istartswith'],
             'package': ['exact', 'icontains', 'istartswith'],
             'type': ['exact'],
+            'health_facility': ['exact'],
         }
         connection_class = ExtendedConnection
 
