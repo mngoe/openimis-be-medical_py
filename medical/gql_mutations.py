@@ -88,7 +88,7 @@ class ServiceInputType(ItemOrServiceInputType):
     items = graphene.List(ServiceItemInputType, required=False)
     services = graphene.List(ServiceServiceInputType, required=False)
     program = graphene.Int(required=True)
-    health_facility = graphene.Int(required=True)
+    health_facility = graphene.Int(required=False)
 
 
 def reset_item_or_service_before_update(item_service):
@@ -297,7 +297,7 @@ class ItemInputType(ItemOrServiceInputType):
     package = graphene.String()
     quantity = graphene.Decimal()
     program = graphene.Int(required=True)
-    health_facility = graphene.Int(required=True)
+    health_facility = graphene.Int(required=False)
 
 class CreateItemMutation(CreateOrUpdateItemOrServiceMutation):
     _mutation_module = "medical"
