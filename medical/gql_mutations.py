@@ -126,8 +126,6 @@ def update_or_create_item_or_service(data, user, item_service_model):
             data["health_facility"] = location_models.HealthFacility.objects.get(id=data["health_facility"])
         except location_models.HealthFacility.DoesNotExist:
             raise ValidationError(f"La FOSA avec l'ID {data['health_facility']} n'existe pas")
-    else:
-        data["health_facility"] = None
     item_service_uuid = data.pop('uuid') if 'uuid' in data else None
     # update_or_create(uuid=service_uuid, ...)
     # doesn't work because of explicit attempt to set null to uuid!
