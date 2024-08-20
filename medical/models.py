@@ -86,7 +86,8 @@ class Item(VersionedModel, ItemOrService):
         models.DO_NOTHING,
         db_column='health_facility',
         related_name="healthFacilityItems",
-        null=True
+        null=True,
+        blank=True
     )
 
     def __bool__(self):
@@ -141,14 +142,14 @@ class Item(VersionedModel, ItemOrService):
 
         # TechnicalUsers don't have health_facility_id attribute
         if hasattr(user._u, 'health_facility_id') and user._u.health_facility_id:
-            return queryset.filter(
+            queryset = queryset.filter(
                 Q(health_facility_id=user._u.health_facility_id) |
                 Q(health_facility_id__isnull=True)
             )
         else:
             if not isinstance(user._u, core_models.TechnicalUser):
                 dist = UserDistrict.get_user_districts(user._u)
-                return queryset.filter(
+                queryset = queryset.filter(
                     Q(health_facility__location_id__in=dist.values_list("location_id", flat=True)) |
                     Q(health_facility_id__isnull=True)
                 )
@@ -215,7 +216,8 @@ class Service(VersionedModel, ItemOrService):
         models.DO_NOTHING,
         db_column='health_facility',
         related_name="healthFacilityServices",
-        null=True
+        null=True,
+        blank=True
     )
 
     # validity_from = fields.DateTimeField(db_column='ValidityFrom', blank=True, null=True)
@@ -284,14 +286,14 @@ class Service(VersionedModel, ItemOrService):
 
         # TechnicalUsers don't have health_facility_id attribute
         if hasattr(user._u, 'health_facility_id') and user._u.health_facility_id:
-            return queryset.filter(
+            queryset = queryset.filter(
                 Q(health_facility_id=user._u.health_facility_id) |
                 Q(health_facility_id__isnull=True)
                 )
         else:
             if not isinstance(user._u, core_models.TechnicalUser):
                 dist = UserDistrict.get_user_districts(user._u)
-                return queryset.filter(
+                queryset = queryset.filter(
                     Q(health_facility__location_id__in=dist.values_list("location_id", flat=True)) |
                     Q(health_facility_id__isnull=True)
                 )

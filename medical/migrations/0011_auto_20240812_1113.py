@@ -17,11 +17,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='item',
             name='health_facility',
-            field=models.ForeignKey(db_column='health_facility', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='healthFacilityItems', to='location.healthfacility'),
+            field=models.ForeignKey(db_column='health_facility', null=True, blank=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='healthFacilityItems', to='location.healthfacility'),
         ),
         migrations.AddField(
             model_name='service',
             name='health_facility',
-            field=models.ForeignKey(db_column='health_facility', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='healthFacilityServices', to='location.healthfacility'),
+            field=models.ForeignKey(db_column='health_facility', null=True, blank=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='healthFacilityServices', to='location.healthfacility'),
         ),
     ]
