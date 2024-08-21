@@ -140,19 +140,6 @@ class Item(VersionedModel, ItemOrService):
         if settings.ROW_SECURITY and user.is_anonymous:
             return queryset.filter(id=-1)
 
-        # TechnicalUsers don't have health_facility_id attribute
-        if hasattr(user._u, 'health_facility_id') and user._u.health_facility_id:
-            queryset = queryset.filter(
-                Q(health_facility_id=user._u.health_facility_id) |
-                Q(health_facility_id__isnull=True)
-            )
-        else:
-            if not isinstance(user._u, core_models.TechnicalUser):
-                dist = UserDistrict.get_user_districts(user._u)
-                queryset = queryset.filter(
-                    Q(health_facility__location_id__in=dist.values_list("location_id", flat=True)) |
-                    Q(health_facility_id__isnull=True)
-                )
         return queryset
 
     # This method might raise problems with bulk delete using query sets
@@ -284,19 +271,6 @@ class Service(VersionedModel, ItemOrService):
         if settings.ROW_SECURITY and user.is_anonymous:
             return queryset.filter(id=-1)
 
-        # TechnicalUsers don't have health_facility_id attribute
-        if hasattr(user._u, 'health_facility_id') and user._u.health_facility_id:
-            queryset = queryset.filter(
-                Q(health_facility_id=user._u.health_facility_id) |
-                Q(health_facility_id__isnull=True)
-                )
-        else:
-            if not isinstance(user._u, core_models.TechnicalUser):
-                dist = UserDistrict.get_user_districts(user._u)
-                queryset = queryset.filter(
-                    Q(health_facility__location_id__in=dist.values_list("location_id", flat=True)) |
-                    Q(health_facility_id__isnull=True)
-                )
         return queryset
 
     class Meta:
