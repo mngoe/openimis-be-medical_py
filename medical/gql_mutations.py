@@ -18,6 +18,7 @@ from medical.services import set_item_or_service_deleted
 from django.db import models
 from medical.utils import process_items_relations, process_services_relations
 from program import models as program_models
+from location import models as location_models
 
 class ServiceCodeInputType(graphene.String):
     @staticmethod
@@ -87,6 +88,7 @@ class ServiceInputType(ItemOrServiceInputType):
     items = graphene.List(ServiceItemInputType, required=False)
     services = graphene.List(ServiceServiceInputType, required=False)
     program = graphene.Int(required=True)
+    health_facility = graphene.Int(required=False)
 
 
 def reset_item_or_service_before_update(item_service):
@@ -119,6 +121,11 @@ def update_or_create_item_or_service(data, user, item_service_model):
     client_mutation_id = data.pop('client_mutation_id', None)
     data.pop('client_mutation_label', None)
     data["program"] = program_models.Program.objects.get(idProgram=data["program"])
+    if 'health_facility' in data:
+        try:
+            data["health_facility"] = location_models.HealthFacility.objects.get(id=data["health_facility"])
+        except location_models.HealthFacility.DoesNotExist:
+            raise ValidationError(f"La FOSA avec l'ID {data['health_facility']} n'existe pas")
     item_service_uuid = data.pop('uuid') if 'uuid' in data else None
     # update_or_create(uuid=service_uuid, ...)
     # doesn't work because of explicit attempt to set null to uuid!
@@ -294,6 +301,7 @@ class ItemInputType(ItemOrServiceInputType):
     package = graphene.String()
     quantity = graphene.Decimal()
     program = graphene.Int(required=True)
+    health_facility = graphene.Int(required=False)
 
 class CreateItemMutation(CreateOrUpdateItemOrServiceMutation):
     _mutation_module = "medical"
