@@ -23,7 +23,7 @@ from location import models as location_models
 class ServiceCodeInputType(graphene.String):
     @staticmethod
     def coerce_string(value):
-        assert_string_length(value, 6)
+        assert_string_length(value, 20)
         return value
 
     serialize = coerce_string
