@@ -181,7 +181,7 @@ class Service(VersionedModel, ItemOrService):
                             max_length=36, default=uuid.uuid4, unique=True)
     # legacy_id = models.IntegerField(db_column='LegacyID', blank=True, null=True)
     category = models.CharField(db_column='ServCategory', max_length=1, blank=True, null=True)
-    code = models.CharField(db_column='ServCode', max_length=6)
+    code = models.CharField(db_column='ServCode', max_length=20)
     name = models.CharField(db_column='ServName', max_length=100)
     type = models.CharField(db_column='ServType', max_length=1)
     packagetype = models.CharField(db_column='ServPackageType', max_length=1, default="S")
