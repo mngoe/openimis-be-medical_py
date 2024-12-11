@@ -18,6 +18,7 @@ from medical.services import set_item_or_service_deleted
 from django.db import models
 from medical.utils import process_items_relations, process_services_relations
 
+from program import models as program_models
 
 logger = logging.getLogger(__name__)
 class ServiceCodeInputType(graphene.String):
@@ -83,11 +84,12 @@ class ItemOrServiceInputType(OpenIMISMutation.Input):
 
 class ServiceInputType(ItemOrServiceInputType):
     level = graphene.String(required=True)
-    packagetype = graphene.String(required=False)
+    packagetype = graphene.String(required=True)
     manualPrice = graphene.String(required=False)
     category = graphene.String(required=False)
     items = graphene.List(ServiceItemInputType, required=False)
     services = graphene.List(ServiceServiceInputType, required=False)
+    program = graphene.Int(required=True)
 
 
 def reset_item_or_service_before_update(item_service):
@@ -119,6 +121,7 @@ def update_or_create_item_or_service(data, user, item_service_model):
     services = data.pop('services') if 'services' in data else None
     client_mutation_id = data.pop('client_mutation_id', None)
     data.pop('client_mutation_label', None)
+    data["program"] = program_models.Program.objects.get(idProgram=data["program"])
     item_service_uuid = data.pop('uuid') if 'uuid' in data else None
     # update_or_create(uuid=service_uuid, ...)
     # doesn't work because of explicit attempt to set null to uuid!
@@ -126,6 +129,37 @@ def update_or_create_item_or_service(data, user, item_service_model):
 
     incoming_code = data.get('code')
     item_service = item_service_model.objects.filter(uuid=item_service_uuid).first()
+    # Delete Service present in the Database and absent in the list sent by FE
+    # Means that user click on delete button and old Service is not sent
+    serviceExisting = list()
+    serviceSent = list()
+    for ServiceList in ServiceService.objects.filter(servicelinkedService=item_service.id).all() :
+        serviceExisting.append(ServiceList.id)
+
+    for ServiceList in services:
+        serviceSent.append(ServiceList.id)
+
+    serviceToDelete = list(set(serviceExisting) - set(serviceSent))
+    for serviceToDeleteId in serviceToDelete:
+        ServiceService.objects.filter(
+            id=serviceToDeleteId,
+        ).delete()
+
+    # Delete Item present in the Database and absent in the list sent by FE
+    # Means that user click on delete button and old Ites is not sent
+    itemExisting = list()
+    itemSent = list()
+    for ItemList in ServiceItem.objects.filter(servicelinkedItem=item_service.id).all() :
+        itemExisting.append(ItemList.id)
+
+    for ItemList in items:
+        itemSent.append(ItemList.id)
+
+    itemToDelete = list(set(itemExisting) - set(itemSent))
+    for itemToDeleteId in itemToDelete:
+        ServiceItem.objects.filter(
+            id=itemToDeleteId,
+        ).delete()
     current_code = item_service.code if item_service else None
     if current_code != incoming_code:
         check_if_code_already_exists(data, item_service_model)
@@ -167,9 +201,14 @@ def update_or_create_item_or_service(data, user, item_service_model):
                 ).delete()
         reset_item_or_service_before_update(item_service)
         [setattr(item_service, key, data[key]) for key in data]
+        item_service.save()
     else:
         item_service = item_service_model.objects.create(**data)
     
+    if item_service:
+        reset_item_or_service_before_update(item_service)
+        [setattr(item_service, key, data[key]) for key in data]
+        item_service.save()
     item_service_sub = 0
     item_service_sub += process_items_relations(user, item_service, items)
     service_service_sub = 0
@@ -290,6 +329,7 @@ class DeleteServiceMutation(OpenIMISMutation):
 class ItemInputType(ItemOrServiceInputType):
     package = graphene.String()
     quantity = graphene.Decimal()
+    program = graphene.Int(required=True)
 
 class CreateItemMutation(CreateOrUpdateItemOrServiceMutation):
     _mutation_module = "medical"

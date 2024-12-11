@@ -4,7 +4,6 @@ from graphene.utils.deduplicator import deflate
 from graphene_django import DjangoObjectType
 from .models import Service, ServiceItem, ServiceService
 
-
 class ServiceGQLType(DjangoObjectType):
     attachments_count = graphene.Int()
     client_mutation_id = graphene.String()
@@ -23,10 +22,11 @@ class ServiceGQLType(DjangoObjectType):
         }
         connection_class = ExtendedConnection
 
-    # @classmethod
-    # def get_queryset(cls, queryset, info):
-    #     service_ids = Service.get_queryset(queryset, info).values('uuid').all()
-    #     return Service.objects.filter(uuid__in=service_ids)
+
+    @classmethod
+    def get_queryset(cls, queryset, info):
+        service_ids = Service.get_queryset(queryset, info).values('uuid').all()
+        return Service.objects.filter(uuid__in=service_ids)
 
 
 class ServiceItemGQLType(DjangoObjectType):

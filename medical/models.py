@@ -12,7 +12,8 @@ from django.conf import settings
 import core
 from medical.apps import MedicalConfig
 from medical.services import set_item_or_service_deleted
-
+from medical import models as medical_models
+from program import models as program_models
 
 class Diagnosis(core_models.VersionedModel):
     id = models.AutoField(db_column='ICDID', primary_key=True)
@@ -71,6 +72,13 @@ class Item(VersionedModel, ItemOrService):
     patient_category = models.SmallIntegerField(db_column='ItemPatCat')
     audit_user_id = models.IntegerField(db_column='AuditUserID')
     # row_id = models.BinaryField(db_column='RowID', blank=True, null=True)
+    program = models.ForeignKey(
+        program_models.Program,
+        models.DO_NOTHING,
+        db_column='program',
+        related_name="item_program",
+        null=True
+    )
 
     def __bool__(self):
         return self.code is not None and len(self.code) >= 1
@@ -170,7 +178,7 @@ class Service(VersionedModel, ItemOrService):
                             max_length=36, default=uuid.uuid4, unique=True)
     # legacy_id = models.IntegerField(db_column='LegacyID', blank=True, null=True)
     category = models.CharField(db_column='ServCategory', max_length=1, blank=True, null=True)
-    code = models.CharField(db_column='ServCode', max_length=6)
+    code = models.CharField(db_column='ServCode', max_length=20)
     name = models.CharField(db_column='ServName', max_length=100)
     type = models.CharField(db_column='ServType', max_length=1)
     packagetype = models.CharField(db_column='ServPackageType', choices=PackageTypes.choices, max_length=1, default=PackageTypes.S)
@@ -181,6 +189,13 @@ class Service(VersionedModel, ItemOrService):
     care_type = models.CharField(db_column='ServCareType', max_length=1)
     frequency = models.SmallIntegerField(db_column='ServFrequency', blank=True, null=True)
     patient_category = models.SmallIntegerField(db_column='ServPatCat', default=DEFAULT_PATIENT_CATEGORY)
+    program = models.ForeignKey(
+        program_models.Program,
+        models.DO_NOTHING,
+        db_column='program',
+        related_name="service_program",
+        null=True
+    )
 
     # validity_from = fields.DateTimeField(db_column='ValidityFrom', blank=True, null=True)
     # validity_to = fields.DateTimeField(db_column='ValidityTo', blank=True, null=True)
