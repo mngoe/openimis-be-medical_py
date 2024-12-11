@@ -5,9 +5,10 @@ from operator import or_
 import django.db.models.base
 import graphene
 from graphene import InputObjectType
+
 from core import assert_string_length, PATIENT_CATEGORY_MASK_ADULT, PATIENT_CATEGORY_MASK_MALE, \
     PATIENT_CATEGORY_MASK_MINOR, PATIENT_CATEGORY_MASK_FEMALE
-from core.schema import TinyInt, SmallInt, OpenIMISMutation
+from core.schema import TinyInt, OpenIMISMutation
 from medical.exceptions import CodeAlreadyExistsError
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ValidationError, PermissionDenied
@@ -16,6 +17,7 @@ from medical.models import Service, ServiceMutation, Item, ItemMutation, Service
 from medical.services import set_item_or_service_deleted
 from django.db import models
 from medical.utils import process_items_relations, process_services_relations
+from program import models as program_models
 
 class ServiceCodeInputType(graphene.String):
     @staticmethod
@@ -84,6 +86,7 @@ class ServiceInputType(ItemOrServiceInputType):
     category = graphene.String(required=False)
     items = graphene.List(ServiceItemInputType, required=False)
     services = graphene.List(ServiceServiceInputType, required=False)
+    program = graphene.Int(required=True)
 
 
 def reset_item_or_service_before_update(item_service):
@@ -115,6 +118,7 @@ def update_or_create_item_or_service(data, user, item_service_model):
     services = data.pop('services') if 'services' in data else []
     client_mutation_id = data.pop('client_mutation_id', None)
     data.pop('client_mutation_label', None)
+    data["program"] = program_models.Program.objects.get(idProgram=data["program"])
     item_service_uuid = data.pop('uuid') if 'uuid' in data else None
     # update_or_create(uuid=service_uuid, ...)
     # doesn't work because of explicit attempt to set null to uuid!
@@ -159,21 +163,20 @@ def update_or_create_item_or_service(data, user, item_service_model):
 
     if item_service_uuid:
         reset_item_or_service_before_update(item_service)
-        for key in data:
-            setattr(item_service, key, data[key])
+        [setattr(item_service, key, data[key]) for key in data]
+        item_service.save()
     else:
         item_service = item_service_model.objects.create(**data)
     
+    if item_service:
+        reset_item_or_service_before_update(item_service)
+        [setattr(item_service, key, data[key]) for key in data]
+        item_service.save()
     item_service_sub = 0
     item_service_sub += process_items_relations(user, item_service, items)
     service_service_sub = 0
     service_service_sub += process_services_relations(user, item_service, services)
-   
-    print(" -- Item service Price")
-    print(item_service)
-    print(item_service.price)
     item_service.save()
-    print(item_service.price)
     
     if client_mutation_id:
         if isinstance(item_service, Service):
@@ -284,6 +287,7 @@ class DeleteServiceMutation(OpenIMISMutation):
 class ItemInputType(ItemOrServiceInputType):
     package = graphene.String()
     quantity = graphene.Decimal()
+    program = graphene.Int(required=True)
 
 class CreateItemMutation(CreateOrUpdateItemOrServiceMutation):
     _mutation_module = "medical"
