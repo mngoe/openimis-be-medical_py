@@ -23,6 +23,7 @@ class ServiceGQLType(DjangoObjectType):
         }
         connection_class = ExtendedConnection
 
+
     @classmethod
     def get_queryset(cls, queryset, info):
         service_ids = Service.get_queryset(queryset, info).values('uuid').all()
