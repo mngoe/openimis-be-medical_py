@@ -65,7 +65,8 @@ class Item(VersionedModel, ItemOrService):
     type = models.CharField(db_column='ItemType', max_length=1)
     package = models.CharField(db_column='ItemPackage', max_length=255, blank=True, null=True)
     price = models.DecimalField(db_column='ItemPrice', max_digits=18, decimal_places=2)
-    quantity = models.DecimalField(db_column='Quantity', max_digits=18, decimal_places=2, null=True)
+    quantity = models.DecimalField(db_column='Quantity', max_digits=18, decimal_places=2,blank = True, null=True)
+    maximum_amount = models.DecimalField(db_column='MaximumAmount', max_digits=18, decimal_places=2,blank=True, null=True)
     care_type = models.CharField(db_column='ItemCareType', max_length=1)
     frequency = models.SmallIntegerField(db_column='ItemFrequency', blank=True, null=True)
     patient_category = models.SmallIntegerField(db_column='ItemPatCat')
@@ -163,8 +164,15 @@ def save_history_on_update(sender, instance, **kwargs):
         now = datetime.datetime.now()
         instance.validity_from = now
 
+class PackageTypes(models.TextChoices):
+    P = "P", "P"
+    S = "S", "S"
+    F = "F", "F"
 
 class Service(VersionedModel, ItemOrService):
+
+    DEFAULT_PATIENT_CATEGORY = 15
+
     id = models.AutoField(db_column='ServiceID', primary_key=True)
     uuid = models.CharField(db_column='ServiceUUID',
                             max_length=36, default=uuid.uuid4, unique=True)
@@ -173,13 +181,14 @@ class Service(VersionedModel, ItemOrService):
     code = models.CharField(db_column='ServCode', max_length=20)
     name = models.CharField(db_column='ServName', max_length=100)
     type = models.CharField(db_column='ServType', max_length=1)
-    packagetype = models.CharField(db_column='ServPackageType', max_length=1, default="S")
+    packagetype = models.CharField(db_column='ServPackageType', choices=PackageTypes.choices, max_length=1, default=PackageTypes.S)
     manualPrice = models.BooleanField(default=False)
     level = models.CharField(db_column='ServLevel', max_length=1)
     price = models.DecimalField(db_column='ServPrice', max_digits=18, decimal_places=2)
+    maximum_amount = models.DecimalField(db_column='MaximumAmount', max_digits=18, decimal_places=2, blank=True, null=True)
     care_type = models.CharField(db_column='ServCareType', max_length=1)
     frequency = models.SmallIntegerField(db_column='ServFrequency', blank=True, null=True)
-    patient_category = models.SmallIntegerField(db_column='ServPatCat', default="15")
+    patient_category = models.SmallIntegerField(db_column='ServPatCat', default=DEFAULT_PATIENT_CATEGORY)
     program = models.ForeignKey(
         program_models.Program,
         models.DO_NOTHING,

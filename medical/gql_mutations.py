@@ -1,14 +1,14 @@
 import functools
+import logging
 from gettext import gettext as _
 from operator import or_
 
 import django.db.models.base
 import graphene
 from graphene import InputObjectType
-
 from core import assert_string_length, PATIENT_CATEGORY_MASK_ADULT, PATIENT_CATEGORY_MASK_MALE, \
     PATIENT_CATEGORY_MASK_MINOR, PATIENT_CATEGORY_MASK_FEMALE
-from core.schema import TinyInt, OpenIMISMutation
+from core.schema import OpenIMISMutation, TinyInt
 from medical.exceptions import CodeAlreadyExistsError
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ValidationError, PermissionDenied
@@ -17,8 +17,10 @@ from medical.models import Service, ServiceMutation, Item, ItemMutation, Service
 from medical.services import set_item_or_service_deleted
 from django.db import models
 from medical.utils import process_items_relations, process_services_relations
+
 from program import models as program_models
 
+logger = logging.getLogger(__name__)
 class ServiceCodeInputType(graphene.String):
     @staticmethod
     def coerce_string(value):
@@ -77,6 +79,7 @@ class ItemOrServiceInputType(OpenIMISMutation.Input):
     patient_categories = graphene.List(of_type=PatientCategoriesEnum, required=False)
     frequency = graphene.Decimal(required=False)
     price = graphene.Decimal(required=True)
+    maximum_amount = graphene.Decimal(required=False)
 
 
 class ServiceInputType(ItemOrServiceInputType):
@@ -114,8 +117,8 @@ def reset_item_or_service_before_update(item_service):
 
 
 def update_or_create_item_or_service(data, user, item_service_model):
-    items = data.pop('items') if 'items' in data else []
-    services = data.pop('services') if 'services' in data else []
+    items = data.pop('items') if 'items' in data else None
+    services = data.pop('services') if 'services' in data else None
     client_mutation_id = data.pop('client_mutation_id', None)
     data.pop('client_mutation_label', None)
     data["program"] = program_models.Program.objects.get(idProgram=data["program"])
@@ -162,6 +165,40 @@ def update_or_create_item_or_service(data, user, item_service_model):
         check_if_code_already_exists(data, item_service_model)
 
     if item_service_uuid:
+        item_service = item_service_model.objects.get(uuid=item_service_uuid)
+        if items:
+            # Delete Service present in the Database and absent in the list sent by FE
+            # Means that user click on delete button and old Service is not sent
+            serviceExisting = list()
+            serviceSent = list()
+            for ServiceList in ServiceService.objects.filter(servicelinkedService=item_service.id).all() :
+                serviceExisting.append(ServiceList.id)
+
+            for ServiceList in services:
+                serviceSent.append(ServiceList.id)
+
+            serviceToDelete = list(set(serviceExisting) - set(serviceSent))
+            for serviceToDeleteId in serviceToDelete:
+                ServiceService.objects.filter(
+                    id=serviceToDeleteId,
+                ).delete()
+
+        if services:
+            # Delete Item present in the Database and absent in the list sent by FE
+            # Means that user click on delete button and old Ites is not sent
+            itemExisting = list()
+            itemSent = list()
+            for ItemList in ServiceItem.objects.filter(servicelinkedItem=item_service.id).all() :
+                itemExisting.append(ItemList.id)
+
+            for ItemList in items:
+                itemSent.append(ItemList.id)
+
+            itemToDelete = list(set(itemExisting) - set(itemSent))
+            for itemToDeleteId in itemToDelete:
+                ServiceItem.objects.filter(
+                    id=itemToDeleteId,
+                ).delete()
         reset_item_or_service_before_update(item_service)
         [setattr(item_service, key, data[key]) for key in data]
         item_service.save()
@@ -176,7 +213,12 @@ def update_or_create_item_or_service(data, user, item_service_model):
     item_service_sub += process_items_relations(user, item_service, items)
     service_service_sub = 0
     service_service_sub += process_services_relations(user, item_service, services)
+   
+    logger.debug(" -- Item service Price")
+    logger.debug(item_service)
+    logger.debug(item_service.price)
     item_service.save()
+    logger.debug(item_service.price)
     
     if client_mutation_id:
         if isinstance(item_service, Service):
@@ -213,8 +255,8 @@ class CreateOrUpdateItemOrServiceMutation(OpenIMISMutation):
         data['audit_user_id'] = user.id_for_audit
         from core.utils import TimeUtils
         data['validity_from'] = TimeUtils.now()
-        print("Create or Update Item or Service Mutation");
-        print(data);
+        logger.debug("Create or Update Item or Service Mutation")
+        logger.debug(data)
         update_or_create_item_or_service(data, user, cls.item_service_model)
         return None
 
