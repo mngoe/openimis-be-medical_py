@@ -7,7 +7,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('medical', '0005_set_managed_to_true'),
-        ('medical', '0008_auto_20220805_2108'),
+        ('medical', '0004_auto_20220804_1112'),
     ]
 
     operations = [
