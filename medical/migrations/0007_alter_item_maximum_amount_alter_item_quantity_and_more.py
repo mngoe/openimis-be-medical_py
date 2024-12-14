@@ -15,11 +15,11 @@ class Migration(migrations.Migration):
             name='maximum_amount',
             field=models.DecimalField(blank=True, db_column='MaximumAmount', decimal_places=2, max_digits=18, null=True),
         ),
-        migrations.AlterField(
-            model_name='item',
-            name='quantity',
-            field=models.DecimalField(blank=True, db_column='Quantity', decimal_places=2, max_digits=18, null=True),
-        ),
+        #migrations.AlterField(
+        #    model_name='item',
+        #    name='quantity',
+        #    field=models.DecimalField(blank=True, db_column='Quantity', decimal_places=2, max_digits=18, null=True),
+        #),
         migrations.AlterField(
             model_name='service',
             name='maximum_amount',

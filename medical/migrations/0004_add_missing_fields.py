@@ -13,52 +13,52 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RenameField(
-            model_name='item',
-            old_name='pat_cat',
-            new_name='patient_category',
-        ),
-        migrations.RenameField(
-            model_name='service',
-            old_name='pat_cat',
-            new_name='patient_category',
-        ),
-        migrations.RemoveField(
-            model_name='item',
-            name='row_id',
-        ),
-        migrations.RemoveField(
-            model_name='service',
-            name='row_id',
-        ),
-        migrations.AddField(
-            model_name='item',
-            name='quantity',
-            field=models.DecimalField(db_column='Quantity', decimal_places=2, max_digits=18, null=True),
-        ),
-        migrations.AddField(
-            model_name='item',
-            name='uuid',
-            field=models.CharField(db_column='ItemUUID', default=uuid.uuid4, max_length=36, unique=True),
-        ),
-        migrations.AddField(
-            model_name='service',
-            name='uuid',
-            field=models.CharField(db_column='ServiceUUID', default=uuid.uuid4, max_length=36, unique=True),
-        ),
-        migrations.AlterField(
-            model_name='diagnosis',
-            name='validity_from',
-            field=core.fields.DateTimeField(db_column='ValidityFrom', default=datetime.datetime.now),
-        ),
-        migrations.AlterField(
-            model_name='item',
-            name='validity_from',
-            field=core.fields.DateTimeField(db_column='ValidityFrom', default=datetime.datetime.now),
-        ),
-        migrations.AlterField(
-            model_name='service',
-            name='validity_from',
-            field=core.fields.DateTimeField(db_column='ValidityFrom', default=datetime.datetime.now),
-        ),
+        # migrations.RenameField(
+        #     model_name='item',
+        #     old_name='pat_cat',
+        #     new_name='patient_category',
+        # ),
+        # migrations.RenameField(
+        #     model_name='service',
+        #     old_name='pat_cat',
+        #     new_name='patient_category',
+        # ),
+        # migrations.RemoveField(
+        #     model_name='item',
+        #     name='row_id',
+        # ),
+        # migrations.RemoveField(
+        #     model_name='service',
+        #     name='row_id',
+        # ),
+        # migrations.AddField(
+        #     model_name='item',
+        #     name='quantity',
+        #     field=models.DecimalField(db_column='Quantity', decimal_places=2, max_digits=18, null=True),
+        # ),
+        # migrations.AddField(
+        #     model_name='item',
+        #     name='uuid',
+        #     field=models.CharField(db_column='ItemUUID', default=uuid.uuid4, max_length=36, unique=True),
+        # ),
+        # migrations.AddField(
+        #     model_name='service',
+        #     name='uuid',
+        #     field=models.CharField(db_column='ServiceUUID', default=uuid.uuid4, max_length=36, unique=True),
+        # ),
+        # migrations.AlterField(
+        #     model_name='diagnosis',
+        #     name='validity_from',
+        #     field=core.fields.DateTimeField(db_column='ValidityFrom', default=datetime.datetime.now),
+        # ),
+        # migrations.AlterField(
+        #     model_name='item',
+        #     name='validity_from',
+        #     field=core.fields.DateTimeField(db_column='ValidityFrom', default=datetime.datetime.now),
+        # ),
+        # migrations.AlterField(
+        #     model_name='service',
+        #     name='validity_from',
+        #     field=core.fields.DateTimeField(db_column='ValidityFrom', default=datetime.datetime.now),
+        # ),
     ]
