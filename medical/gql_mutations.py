@@ -119,8 +119,8 @@ def reset_item_or_service_before_update(item_service):
 
 
 def update_or_create_item_or_service(data, user, item_service_model):
-    items = data.pop('items') if 'items' in data else None
-    services = data.pop('services') if 'services' in data else None
+    items = data.pop('items') if 'items' in data else []
+    services = data.pop('services') if 'services' in data else []
     client_mutation_id = data.pop('client_mutation_id', None)
     data.pop('client_mutation_label', None)
     data["program"] = program_models.Program.objects.get(idProgram=data["program"])
@@ -142,8 +142,9 @@ def update_or_create_item_or_service(data, user, item_service_model):
     # Means that user click on delete button and old Service is not sent
     serviceExisting = list()
     serviceSent = list()
-    for ServiceList in ServiceService.objects.filter(servicelinkedService=item_service.id).all() :
-        serviceExisting.append(ServiceList.id)
+    if item_service:
+        for ServiceList in ServiceService.objects.filter(servicelinkedService=item_service.id).all() :
+            serviceExisting.append(ServiceList.id)
 
     for ServiceList in services:
         serviceSent.append(ServiceList.id)
@@ -158,8 +159,9 @@ def update_or_create_item_or_service(data, user, item_service_model):
     # Means that user click on delete button and old Ites is not sent
     itemExisting = list()
     itemSent = list()
-    for ItemList in ServiceItem.objects.filter(servicelinkedItem=item_service.id).all() :
-        itemExisting.append(ItemList.id)
+    if item_service:
+        for ItemList in ServiceItem.objects.filter(servicelinkedItem=item_service.id).all() :
+            itemExisting.append(ItemList.id)
 
     for ItemList in items:
         itemSent.append(ItemList.id)
@@ -180,8 +182,9 @@ def update_or_create_item_or_service(data, user, item_service_model):
             # Means that user click on delete button and old Service is not sent
             serviceExisting = list()
             serviceSent = list()
-            for ServiceList in ServiceService.objects.filter(servicelinkedService=item_service.id).all() :
-                serviceExisting.append(ServiceList.id)
+            if item_service:
+                for ServiceList in ServiceService.objects.filter(servicelinkedService=item_service.id).all() :
+                    serviceExisting.append(ServiceList.id)
 
             for ServiceList in services:
                 serviceSent.append(ServiceList.id)
@@ -197,8 +200,9 @@ def update_or_create_item_or_service(data, user, item_service_model):
             # Means that user click on delete button and old Ites is not sent
             itemExisting = list()
             itemSent = list()
-            for ItemList in ServiceItem.objects.filter(servicelinkedItem=item_service.id).all() :
-                itemExisting.append(ItemList.id)
+            if item_service:
+                for ItemList in ServiceItem.objects.filter(servicelinkedItem=item_service.id).all() :
+                    itemExisting.append(ItemList.id)
 
             for ItemList in items:
                 itemSent.append(ItemList.id)
