@@ -10,9 +10,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name='service',
-            name='patient_category',
-            field=models.SmallIntegerField(db_column='ServPatCat', default=15),
-        ),
+        # migrations.AlterField(
+        #     model_name='service',
+        #     name='patient_category',
+        #     field=models.SmallIntegerField(db_column='ServPatCat', default=15),
+        # ),
     ]
