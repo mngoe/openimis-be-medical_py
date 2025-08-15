@@ -31,11 +31,11 @@ class Migration(migrations.Migration):
             name='patient_category',
             field=models.SmallIntegerField(db_column='ServPatCat', default='15'),
         ),
-        migrations.AddField(
-            model_name='service',
-            name='uuid',
-            field=models.CharField(db_column='ServiceUUID', default=uuid.uuid4, max_length=36, unique=True),
-        ),
+        # migrations.AddField(
+        #     model_name='service',
+        #     name='uuid',
+        #     field=models.CharField(db_column='ServiceUUID', default=uuid.uuid4, max_length=36, unique=True),
+        # ),
         migrations.AlterField(
             model_name='service',
             name='validity_from',
