@@ -18,11 +18,11 @@ class Migration(migrations.Migration):
             old_name='pat_cat',
             new_name='patient_category',
         ),
-        # migrations.RenameField(
-        #     model_name='service',
-        #     old_name='pat_cat',
-        #     new_name='patient_category',
-        # ),
+        migrations.RenameField(
+            model_name='service',
+            old_name='pat_cat',
+            new_name='patient_category',
+        ),
         # migrations.RemoveField(
         #     model_name='item',
         #     name='row_id',
