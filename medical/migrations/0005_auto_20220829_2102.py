@@ -36,9 +36,9 @@ class Migration(migrations.Migration):
         #     name='uuid',
         #     field=models.CharField(db_column='ServiceUUID', default=uuid.uuid4, max_length=36, unique=True),
         # ),
-        migrations.AlterField(
-            model_name='service',
-            name='validity_from',
-            field=core.fields.DateTimeField(db_column='ValidityFrom', default=datetime.datetime.now),
-        ),
+        # migrations.AlterField(
+        #     model_name='service',
+        #     name='validity_from',
+        #     field=core.fields.DateTimeField(db_column='ValidityFrom', default=datetime.datetime.now),
+        # ),
     ]
