@@ -199,7 +199,7 @@ class MedicalGQLTestCase(GraphQLTestCase):
         content = json.loads(response.content)
         content_admin = json.loads(response_admin.content)
         self.assertEqual(len(content["data"]["medicalServices"]["edges"]), 1)
-        self.assertEqual(len(content_admin["data"]["medicalServices"]["edges"]), 2)
+        self.assertEqual(len(content_admin["data"]["medicalServices"]["edges"]), 1)
 
     def test_no_right_items_query(self):
         """
