@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('program', '0003_auto_20230315_0851'),
-        ('medical', '0008_auto_20230807_0909'),
+        ('medical', '0009_alter_service_patient_category'),
     ]
 
     operations = [

@@ -8,7 +8,7 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('medical', '0007_alter_item_maximum_amount_alter_item_quantity_and_more'),
+        ('medical', '0007_auto_20230807_0907'),
     ]
 
     operations = [

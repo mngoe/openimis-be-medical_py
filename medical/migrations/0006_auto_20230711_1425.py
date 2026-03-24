@@ -10,7 +10,7 @@ import uuid
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('medical', '0004_auto_20220804_1112'),
+        ('medical', '0005_set_managed_to_true'),
     ]
 
     operations = [
