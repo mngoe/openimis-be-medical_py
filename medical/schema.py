@@ -101,6 +101,11 @@ class Query(graphene.ObjectType):
         else:
             return Diagnosis.objects.filter(*filter_validity())
 
+    def resolve_diagnoses(self, info, **kwargs):
+        if not info.context.user.has_perms(MedicalConfig.gql_query_diagnosis_perms):
+            raise PermissionDenied(_("unauthorized"))
+        return Diagnosis.objects.filter(*filter_validity())
+
     def resolve_medical_items_str(self, info, pricelist_uuid=None, date=None, **kwargs):
         # OMT-281 allow listing of medical services even if the query right is not given
         # if not info.context.user.has_perms(MedicalConfig.gql_query_medical_items_perms):
