@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('medical', '0004_add_missing_fields'),
+        ('medical', '0005_auto_20220829_2102'),
     ]
 
     operations = [

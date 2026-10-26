@@ -39,6 +39,7 @@ class ItemGQLType(DjangoObjectType):
             'name': ['exact', 'icontains', 'istartswith'],
             'package': ['exact', 'icontains', 'istartswith'],
             'type': ['exact'],
+            'health_facility_id': ['exact'],
         }
         connection_class = ExtendedConnection
 
@@ -100,18 +101,29 @@ class Query(graphene.ObjectType):
         else:
             return Diagnosis.objects.filter(*filter_validity())
 
+    def resolve_diagnoses(self, info, **kwargs):
+        if not info.context.user.has_perms(MedicalConfig.gql_query_diagnosis_perms):
+            raise PermissionDenied(_("unauthorized"))
+        return Diagnosis.objects.filter(*filter_validity())
+
     def resolve_medical_items_str(self, info, pricelist_uuid=None, date=None, **kwargs):
         # OMT-281 allow listing of medical services even if the query right is not given
         # if not info.context.user.has_perms(MedicalConfig.gql_query_medical_items_perms):
         if info.context.user.is_anonymous:
             raise PermissionDenied(_("unauthorized"))
         search_str = kwargs.get("str")
+        health_facility_id = kwargs.get("health_facility_id", None)
         q = Item.objects.filter(*filter_validity(date))
         if pricelist_uuid is not None:
             q = q.filter(pricelist_details__items_pricelist__uuid=pricelist_uuid,
                          pricelist_details__validity_to__isnull=True)
         if search_str is not None:
             q = q.filter(Q(code__icontains=search_str) | Q(name__icontains=search_str))
+        if health_facility_id is not None:
+            q = q.filter(
+                Q(health_facility_id=health_facility_id) |
+                Q(health_facility_id__isnull=True)
+            )
         return q
 
     def resolve_medical_items(
@@ -127,6 +139,7 @@ class Query(graphene.ObjectType):
         # if not info.context.user.has_perms(MedicalConfig.gql_query_medical_items_perms):
         if info.context.user.is_anonymous:
             raise PermissionDenied(_("unauthorized"))
+        health_facility_id = kwargs.get("health_facility_id", None)
         queryset = Item.get_queryset(
             None, user=info.context.user, show_history=show_history
         )
@@ -140,6 +153,11 @@ class Query(graphene.ObjectType):
             )
         if not show_history:
             queryset = queryset.filter(*filter_validity(**kwargs))
+        if health_facility_id is not None:
+            queryset = queryset.filter(
+                Q(health_facility_id=health_facility_id) |
+                Q(health_facility_id__isnull=True)
+            )
         return gql_optimizer.query(queryset, info)
 
     def resolve_medical_services_str(
@@ -150,12 +168,18 @@ class Query(graphene.ObjectType):
         if info.context.user.is_anonymous:
             raise PermissionDenied(_("unauthorized"))
         search_str = kwargs.get("str")
+        health_facility_id = kwargs.get("health_facility_id", None)
         q = Service.objects.filter(*filter_validity(date))
         if pricelist_uuid is not None:
             q = q.filter(pricelist_details__services_pricelist__uuid=pricelist_uuid,
                          pricelist_details__validity_to__isnull=True)
         if search_str is not None:
             q = q.filter(Q(code__icontains=search_str) | Q(name__icontains=search_str))
+        if health_facility_id is not None:
+            q = q.filter(
+                Q(health_facility_id=health_facility_id) |
+                Q(health_facility_id__isnull=True)
+            )
         return q
 
     def resolve_medical_services(
@@ -170,6 +194,7 @@ class Query(graphene.ObjectType):
         # if not info.context.user.has_perms(MedicalConfig.gql_query_medical_services_perms):
         if info.context.user.is_anonymous:
             raise PermissionDenied(_("unauthorized"))
+        health_facility_id = kwargs.get("health_facility_id", None)
         queryset = Service.get_queryset(
             None, user=info.context.user, show_history=show_history
         )
@@ -183,6 +208,11 @@ class Query(graphene.ObjectType):
             )
         if not show_history:
             queryset = queryset.filter(*filter_validity(**kwargs))
+        if health_facility_id is not None:
+            queryset = queryset.filter(
+                Q(health_facility_id=health_facility_id) |
+                Q(health_facility_id__isnull=True)
+            )
         return gql_optimizer.query(queryset, info)
 
     def resolve_validate_service_code(self, info, **kwargs):

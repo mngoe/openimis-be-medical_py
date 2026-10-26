@@ -14,6 +14,9 @@ from medical.apps import MedicalConfig
 from medical.services import set_item_or_service_deleted
 from medical import models as medical_models
 from program import models as program_models
+from location import models as location_models
+from location.models import UserDistrict
+from django.db.models import Q
 
 class Diagnosis(core_models.VersionedModel):
     id = models.AutoField(db_column='ICDID', primary_key=True)
@@ -78,6 +81,14 @@ class Item(VersionedModel, ItemOrService):
         db_column='program',
         related_name="item_program",
         null=True
+    )
+    health_facility = models.ForeignKey(
+        location_models.HealthFacility,
+        models.DO_NOTHING,
+        db_column='health_facility',
+        related_name="healthFacilityItems",
+        null=True,
+        blank=True
     )
 
     def __bool__(self):
@@ -195,6 +206,14 @@ class Service(VersionedModel, ItemOrService):
         db_column='program',
         related_name="service_program",
         null=True
+    )
+    health_facility = models.ForeignKey(
+        location_models.HealthFacility,
+        models.DO_NOTHING,
+        db_column='health_facility',
+        related_name="healthFacilityServices",
+        null=True,
+        blank=True
     )
 
     # validity_from = fields.DateTimeField(db_column='ValidityFrom', blank=True, null=True)
