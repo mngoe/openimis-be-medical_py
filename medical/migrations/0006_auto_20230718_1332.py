@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('medical', '0005_set_managed_to_true'),
+        ('medical', '0006_auto_20230711_1425'),
     ]
 
     operations = [

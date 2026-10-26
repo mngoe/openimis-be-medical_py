@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('medical', '0006_auto_20230711_1425'),
+        ('medical', '0007_alter_item_maximum_amount_alter_item_quantity_and_more'),
     ]
 
     operations = [
