@@ -26,10 +26,13 @@ class ServiceGQLType(DjangoObjectType):
         connection_class = ExtendedConnection
 
 
-    @classmethod
-    def get_queryset(cls, queryset, info):
-        service_ids = Service.get_queryset(queryset, info).values('uuid').all()
-        return Service.objects.filter(uuid__in=service_ids)
+    # Disabled as in 26.10: it re-filtered every query to the current rows, so
+    # medicalServices(showHistory: true) lost the history the resolver had asked for.
+    # Access is decided by the resolver (Service.get_queryset), not here.
+    # @classmethod
+    # def get_queryset(cls, queryset, info):
+    #     service_ids = Service.get_queryset(queryset, info).values('uuid').all()
+    #     return Service.objects.filter(uuid__in=service_ids)
 
 
 class ServiceItemGQLType(DjangoObjectType):

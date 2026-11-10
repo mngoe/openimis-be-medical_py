@@ -3,7 +3,7 @@ import json
 from dataclasses import dataclass
 
 from core.models import User
-from core.test_helpers import create_test_interactive_user
+from core.test_helpers import create_test_interactive_user, create_enrolment_officer_role
 from django.conf import settings
 from graphene_django.utils.testing import GraphQLTestCase
 from graphql_jwt.shortcuts import get_token
@@ -37,13 +37,16 @@ class MedicalGQLTestCase(GraphQLTestCase):
         cls.program = create_test_program()
         cls.admin_user = create_test_interactive_user(username="testMedicalAdmin")
         cls.admin_token = get_token(cls.admin_user, DummyContext(user=cls.admin_user))
-        cls.noright_user = create_test_interactive_user(username="testMedicalNoRight", roles=[1])
+        cls.noright_user = create_test_interactive_user(username="testMedicalNoRight", roles=[create_enrolment_officer_role().id])
         cls.noright_token = get_token(cls.noright_user, DummyContext(user=cls.noright_user))
         cls.test_item_hist = create_test_item(item_type="M", custom_props={
             "name": "Test history API", "code": "TSTAP9"})
         cls.test_item_hist.save_history()
         cls.test_item = create_test_item(item_type="M", custom_props={
             "name": "Test name API", "code": "TSTAP0", "package": "box of 12"})
+        cls.test_service_hist = create_test_service(category="A", custom_props={
+            "name": "Test service history API", "code": "TSVAP9"})
+        cls.test_service_hist.save_history()
         cls.test_service = create_test_service(category="A", custom_props={
             "name": "Test svc API", "code": "SVCAP0", "level": "C"})
         cls.test_item_update = create_test_item(item_type="M", custom_props={
@@ -191,14 +194,14 @@ class MedicalGQLTestCase(GraphQLTestCase):
         Unlike some other modules, medical services and items are available to everyone but limited,
         i.e. no showHistory so we're accessing a modified service and make sure that history is not available.
         """
-        query = 'query { medicalServices(showHistory: true, code:"M1") { edges { node { id name } } } }'
+        query = 'query { medicalServices(showHistory: true, code:"%s") { edges { node { id name } } } }' % self.test_service_hist.code
         response = self.query(query, headers={"HTTP_AUTHORIZATION": f"{self.AUTH_HEADER} {self.noright_token}"})
         response_admin = self.query(query, headers={"HTTP_AUTHORIZATION": f"{self.AUTH_HEADER} {self.admin_token}"})
 
         content = json.loads(response.content)
         content_admin = json.loads(response_admin.content)
         self.assertEqual(len(content["data"]["medicalServices"]["edges"]), 1)
-        self.assertEqual(len(content_admin["data"]["medicalServices"]["edges"]), 1)
+        self.assertEqual(len(content_admin["data"]["medicalServices"]["edges"]), 2)
 
     def test_no_right_items_query(self):
         """
