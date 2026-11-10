@@ -91,7 +91,10 @@ class Query(graphene.ObjectType):
     )
 
     def resolve_diagnoses_str(self, info, **kwargs):
-        if not info.context.user.has_perms(MedicalConfig.gql_query_diagnosis_perms):
+        # gql_query_diagnosis_perms is [] (open to authenticated users, OMT-281);
+        # has_perms([]) is True even for AnonymousUser, so refuse anonymous first
+        if info.context.user.is_anonymous or not info.context.user.has_perms(
+                MedicalConfig.gql_query_diagnosis_perms):
             raise PermissionDenied(_("unauthorized"))
         search_str = kwargs.get('str')
         if search_str is not None:
@@ -102,7 +105,10 @@ class Query(graphene.ObjectType):
             return Diagnosis.objects.filter(*filter_validity())
 
     def resolve_diagnoses(self, info, **kwargs):
-        if not info.context.user.has_perms(MedicalConfig.gql_query_diagnosis_perms):
+        # gql_query_diagnosis_perms is [] (open to authenticated users, OMT-281);
+        # has_perms([]) is True even for AnonymousUser, so refuse anonymous first
+        if info.context.user.is_anonymous or not info.context.user.has_perms(
+                MedicalConfig.gql_query_diagnosis_perms):
             raise PermissionDenied(_("unauthorized"))
         return Diagnosis.objects.filter(*filter_validity())
 
