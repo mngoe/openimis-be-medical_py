@@ -4,14 +4,18 @@ from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
 
+from django.db import migrations, models
+import django.db.models.deletion
+import django.utils.timezone
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('medical', '0004_add_missing_fields'),
+        ('medical', '0003_mutations'),
     ]
 
     operations = [
+        
         migrations.AlterModelOptions(
             name='service',
             options={'managed': True},

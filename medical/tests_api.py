@@ -10,6 +10,7 @@ from graphql_jwt.shortcuts import get_token
 from medical.models import Item, ServiceItem, ServiceService
 from medical.test_helpers import create_test_item, create_test_service
 from medical.utils import item_create_hook, service_create_hook
+from program.test_helpers import create_test_program
 from rest_framework import status
 
 # from openIMIS import schema
@@ -32,6 +33,8 @@ class MedicalGQLTestCase(GraphQLTestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.AUTH_HEADER = settings.GRAPHQL_JWT.get('JWT_AUTH_HEADER_PREFIX', 'Bearer')
+        # items and services are mandatorily attached to a program
+        cls.program = create_test_program()
         cls.admin_user = create_test_interactive_user(username="testMedicalAdmin")
         cls.admin_token = get_token(cls.admin_user, DummyContext(user=cls.admin_user))
         cls.noright_user = create_test_interactive_user(username="testMedicalNoRight", roles=[1])
@@ -291,12 +294,13 @@ class MedicalGQLTestCase(GraphQLTestCase):
                 patientCategory: 11
                 price: "321"
                 package: "box of 1"
+                program: %s
               }) {
                 internalId
                 clientMutationId
               }
             }
-            ''',
+            ''' % self.program.idProgram,
             headers={"HTTP_AUTHORIZATION": f"{self.AUTH_HEADER} {self.admin_token}"},
         )
 
@@ -335,12 +339,13 @@ class MedicalGQLTestCase(GraphQLTestCase):
                 quantity: "1.0"
                 price: "555"
                 package: "box of 12"
+                program: %s
               }) {
                 internalId
                 clientMutationId
               }
             }
-            ''' % self.test_item_update.uuid,
+            ''' % (self.test_item_update.uuid, self.program.idProgram),
             headers={"HTTP_AUTHORIZATION": f"{self.AUTH_HEADER} {self.admin_token}"},
         )
 
@@ -375,12 +380,13 @@ class MedicalGQLTestCase(GraphQLTestCase):
                 price: "555"
                 manualPrice: "0"
                 packagetype: "S"
+                program: %s
               }) {
                 internalId
                 clientMutationId
               }
             }
-            ''' % self.test_service_update.uuid,
+            ''' % (self.test_service_update.uuid, self.program.idProgram),
             headers={"HTTP_AUTHORIZATION": f"{self.AUTH_HEADER} {self.admin_token}"},
         )
 
@@ -467,6 +473,7 @@ class MedicalGQLTestCase(GraphQLTestCase):
                 price: "555"
                 manualPrice: "0"
                 packagetype: "S"
+                program: %s
                 services:  [
                     {
                         serviceId: %s,
@@ -488,7 +495,8 @@ class MedicalGQLTestCase(GraphQLTestCase):
                 clientMutationId
               }
             }
-            ''' % (self.test_service_update.uuid, self.test_service.id, self.test_item.id),
+            ''' % (self.test_service_update.uuid, self.program.idProgram,
+                   self.test_service.id, self.test_item.id),
             headers={"HTTP_AUTHORIZATION": f"{self.AUTH_HEADER} {self.admin_token}"},
         )
         self.test_service_update.refresh_from_db()

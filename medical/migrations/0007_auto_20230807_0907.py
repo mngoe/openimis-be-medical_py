@@ -7,12 +7,28 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('medical', '0007_alter_item_maximum_amount_alter_item_quantity_and_more'),
+        ('medical', '0006_auto_20230711_1425'),
     ]
-
+    replaces = [('medical','0007_alter_item_maximum_amount_alter_item_quantity_and_more')] 
     operations = [
         migrations.AlterModelOptions(
             name='item',
             options={'managed': True},
         ),
+               migrations.AlterField(
+            model_name='item',
+            name='maximum_amount',
+            field=models.DecimalField(blank=True, db_column='MaximumAmount', decimal_places=2, max_digits=18, null=True),
+        ),
+        #migrations.AlterField(
+        #    model_name='item',
+        #    name='quantity',
+        #    field=models.DecimalField(blank=True, db_column='Quantity', decimal_places=2, max_digits=18, null=True),
+        #),
+        migrations.AlterField(
+            model_name='service',
+            name='maximum_amount',
+            field=models.DecimalField(blank=True, db_column='MaximumAmount', decimal_places=2, max_digits=18, null=True),
+        ),
+
     ]

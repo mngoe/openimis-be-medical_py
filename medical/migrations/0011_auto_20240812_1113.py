@@ -12,6 +12,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ('medical', '0010_auto_20240710_1057'),
     ]
+    replace = [('medical', '0011_merge_20241211_1731')]
 
     operations = [
         migrations.AddField(

@@ -10,13 +10,24 @@ import uuid
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('medical', '0005_set_managed_to_true'),
+        ('medical', '0005_auto_20220829_2102'),
     ]
+    replaces = [('medical','0006_auto_20230718_1332')] 
 
     operations = [
         migrations.AddField(
             model_name='service',
             name='program',
             field=models.ManyToManyField(to='program.Program'),
-        )
+        ),
+                migrations.AddField(
+            model_name='item',
+            name='maximum_amount',
+            field=models.DecimalField(db_column='MaximumAmount', decimal_places=2, max_digits=18, null=True),
+        ),
+        migrations.AddField(
+            model_name='service',
+            name='maximum_amount',
+            field=models.DecimalField(db_column='MaximumAmount', decimal_places=2, max_digits=18, null=True),
+        ),
     ]
