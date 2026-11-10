@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ('medical', '0004_auto_20220804_1112'),
     ]
-    replaces = [('medical','0005_set_managed_to_true ')]
+    replaces = [('medical','0005_set_managed_to_true')]
 
     operations = [
         migrations.RemoveField(
@@ -33,7 +33,7 @@ class Migration(migrations.Migration):
             name='patient_category',
             field=models.SmallIntegerField(db_column='ServPatCat', default='15'),
         ),
-        # tblServices.ServiceUUID already exists in the legacy IMIS schema, so the
+        # tblServices.ServiceUUID and ValidityFrom already exist in the legacy IMIS schema, so the
         # plain AddField failed with 'column "ServiceUUID" ... already exists'.
         # Declare the field in Django's migration state only.
         migrations.SeparateDatabaseAndState(
@@ -44,14 +44,16 @@ class Migration(migrations.Migration):
                     name='uuid',
                     field=models.CharField(db_column='ServiceUUID', default=uuid.uuid4, max_length=36, unique=True),
                 ),
+                # Altering tblServices.ValidityFrom in the database breaks on the
+                # legacy schema (test-csu commented it out for CI); state only.
+                migrations.AlterField(
+                    model_name='service',
+                    name='validity_from',
+                    field=core.fields.DateTimeField(db_column='ValidityFrom', default=datetime.datetime.now),
+                ),
             ],
         ),
-        migrations.AlterField(
-            model_name='service',
-            name='validity_from',
-            field=core.fields.DateTimeField(db_column='ValidityFrom', default=datetime.datetime.now),
-        ),
-                migrations.AlterModelOptions(
+        migrations.AlterModelOptions(
             name='diagnosis',
             options={'managed': True},
         ),
