@@ -129,9 +129,11 @@ class Query(graphene.ObjectType):
         # if not info.context.user.has_perms(MedicalConfig.gql_query_medical_items_perms):
         if info.context.user.is_anonymous:
             raise PermissionDenied(_("unauthorized"))
-        # legacy: live items only. filter_validity(date) took the date as its
-        # argument *name*, so the date never filtered anything: it still doesn't.
-        legacy_row_filters(info, kwargs, validity=Validity.NOW)
+        # live items, or those valid on `date` (business validity, history copies
+        # included). The legacy filter_validity(date) meant this but passed the date
+        # as the argument *name*, so it always returned the live rows.
+        legacy_row_filters(
+            info, kwargs, validity=Validity.at(date) if date is not None else Validity.NOW)
         search_str = kwargs.get("str")
         health_facility_id = kwargs.get("health_facility_id", None)
         q = Item.objects.all()
@@ -192,9 +194,11 @@ class Query(graphene.ObjectType):
         # if not info.context.user.has_perms(MedicalConfig.gql_query_medical_services_perms):
         if info.context.user.is_anonymous:
             raise PermissionDenied(_("unauthorized"))
-        # legacy: live services only. filter_validity(date) took the date as its
-        # argument *name*, so the date never filtered anything: it still doesn't.
-        legacy_row_filters(info, kwargs, validity=Validity.NOW)
+        # live services, or those valid on `date` (business validity, history copies
+        # included). The legacy filter_validity(date) meant this but passed the date
+        # as the argument *name*, so it always returned the live rows.
+        legacy_row_filters(
+            info, kwargs, validity=Validity.at(date) if date is not None else Validity.NOW)
         search_str = kwargs.get("str")
         health_facility_id = kwargs.get("health_facility_id", None)
         q = Service.objects.all()

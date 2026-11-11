@@ -112,13 +112,31 @@ class MedicalRowFilterArgsTest(openIMISGraphQLTestCase):
                                   ("medicalServicesStr", "RFAS", self.service)):
             with self.subTest(field):
                 self.assertEqual(self._expect(rows, "live"), self._ids(field, f'str: "{code}"'))
-                # the legacy date never filtered anything
-                self.assertEqual(self._expect(rows, "live"),
-                                 self._ids(field, f'str: "{code}", date: "2000-01-01"'))
                 self.assertEqual(self._expect(rows, "deleted"),
                                  self._ids(field, f'str: "{code}", isDeleted: true'))
                 self.assertEqual(self._expect(rows, "live", "copy"),
                                  self._ids(field, f'str: "{code}", showHistory: true'))
+
+    def test_str_variants_date_is_the_business_validity(self):
+        """`date` returns the version valid that day, whether live, a history copy or deleted."""
+        from graphql_relay import from_global_id
+        from medical.models import Item, Service
+        periods = {
+            "deleted": ("2019-01-01", "2019-12-31"),
+            "copy": ("2020-01-01", "2020-12-31"),
+            "live": ("2021-01-01", None),
+        }
+        for field, code, rows, model in (("medicalItemsStr", "RFAI", self.item, Item),
+                                         ("medicalServicesStr", "RFAS", self.service, Service)):
+            for name, (valid_from, valid_to) in periods.items():
+                model.objects.filter(id=from_global_id(rows[name])[1]).update(
+                    validity_from=valid_from, validity_to=valid_to)
+            with self.subTest(field):
+                for day, expected in (("2019-06-01", "deleted"), ("2020-06-01", "copy"),
+                                      ("2022-06-01", "live")):
+                    self.assertEqual(self._expect(rows, expected),
+                                     self._ids(field, f'str: "{code}", date: "{day}"'), day)
+                self.assertEqual(set(), self._ids(field, f'str: "{code}", date: "2000-01-01"'))
 
     # -- diagnoses / diagnosesStr: live -------------------------------------------
 
