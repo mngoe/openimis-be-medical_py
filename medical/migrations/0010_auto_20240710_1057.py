@@ -2,6 +2,49 @@
 
 from django.db import migrations, models
 
+# tblServices.ServCode is varchar(6) in the legacy IMIS schema and two legacy
+# reporting views (uvwServiceExpenditures, uvwServiceUtilization) select it, so
+# a plain ALTER COLUMN ... TYPE fails with
+#   NotSupportedError: cannot alter type of a column used by a view or rule
+# Drop the dependent views, widen the column, then recreate them from the
+# definitions captured beforehand. Nothing is hard-coded: the views are read
+# back with pg_get_viewdef, so this also works on installations whose reporting
+# views differ. (It assumes the dependent views do not depend on each other,
+# which holds for the stock IMIS schema.)
+WIDEN_SERVCODE = """
+DO $$
+DECLARE
+    rec        RECORD;
+    view_names text[] := '{}';
+    view_defs  text[] := '{}';
+    i          int;
+BEGIN
+    FOR rec IN
+        SELECT DISTINCT c.oid::regclass::text AS vname,
+                        pg_get_viewdef(c.oid, true) AS vdef
+        FROM pg_depend d
+        JOIN pg_rewrite r ON d.objid = r.oid
+        JOIN pg_class   c ON r.ev_class = c.oid
+        JOIN pg_class   t ON d.refobjid = t.oid
+        WHERE t.relname = 'tblServices' AND c.relkind = 'v'
+    LOOP
+        view_names := view_names || rec.vname;
+        view_defs  := view_defs  || rec.vdef;
+    END LOOP;
+
+    FOR i IN 1 .. COALESCE(array_length(view_names, 1), 0) LOOP
+        EXECUTE format('DROP VIEW IF EXISTS %s CASCADE', view_names[i]);
+    END LOOP;
+
+    EXECUTE 'ALTER TABLE "tblServices" ALTER COLUMN "ServCode" TYPE varchar(20)';
+
+    FOR i IN 1 .. COALESCE(array_length(view_names, 1), 0) LOOP
+        EXECUTE format('CREATE OR REPLACE VIEW %s AS %s', view_names[i], view_defs[i]);
+    END LOOP;
+END
+$$;
+"""
+
 
 class Migration(migrations.Migration):
 
@@ -10,9 +53,16 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name='service',
-            name='code',
-            field=models.CharField(db_column='ServCode', max_length=20),
-        )
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunSQL(sql=WIDEN_SERVCODE, reverse_sql=migrations.RunSQL.noop),
+            ],
+            state_operations=[
+                migrations.AlterField(
+                    model_name='service',
+                    name='code',
+                    field=models.CharField(db_column='ServCode', max_length=20),
+                ),
+            ],
+        ),
     ]

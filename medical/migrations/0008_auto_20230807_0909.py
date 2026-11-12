@@ -6,13 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('medical', '0008_auto_20220804_1112'),
+        ('medical', '0007_auto_20230807_0907'),
     ]
+    replaces = [('medical','0008_auto_20220804_1112')]
 
     operations = [
         migrations.AddField(
             model_name='item',
             name='program',
             field=models.ManyToManyField(to='program.Program'),
+        ),
+                migrations.AlterModelOptions(
+            name='service',
+            options={'managed': True},
         ),
     ]

@@ -1,12 +1,12 @@
 import graphene
 from core import ExtendedConnection
-from core import filter_validity
+from core.gql import legacy_row_filters, row_filter_arguments
+from core.models import Audits, Validity
 from core.schema import OrderedDjangoFilterConnectionField
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.utils.translation import gettext as _
 from graphene_django import DjangoObjectType
-from graphene_django.filter import DjangoFilterConnectionField
 from medical.gql_mutations import CreateServiceMutation, UpdateServiceMutation, DeleteServiceMutation, \
     CreateItemMutation, UpdateItemMutation, DeleteItemMutation
 from .gql_queries import *
@@ -17,7 +17,7 @@ import graphene_django_optimizer as gql_optimizer
 from .services import check_unique_code_item, check_unique_code_service
 
 
-class DiagnosisGQLType(DjangoObjectType):
+class DiagnosisGQLType(RowFilteredQuerysetMixin, DjangoObjectType):
     class Meta:
         model = Diagnosis
         interfaces = (graphene.relay.Node,)
@@ -29,7 +29,7 @@ class DiagnosisGQLType(DjangoObjectType):
         connection_class = ExtendedConnection
 
 
-class ItemGQLType(DjangoObjectType):
+class ItemGQLType(RowFilteredQuerysetMixin, DjangoObjectType):
     class Meta:
         model = Item
         interfaces = (graphene.relay.Node,)
@@ -45,17 +45,24 @@ class ItemGQLType(DjangoObjectType):
 
 
 class Query(graphene.ObjectType):
-    diagnoses = DjangoFilterConnectionField(DiagnosisGQLType)
-    diagnoses_str = DjangoFilterConnectionField(
+    # OP-3317: every connection below takes isDeleted / showHistory; the resolvers
+    # state what their legacy arguments mean (legacy_row_filters) and the model
+    # applies it through RowFilteredQuerysetMixin -> Model.get_queryset (OP-2029).
+    diagnoses = OrderedDjangoFilterConnectionField(
         DiagnosisGQLType,
-        str=graphene.String()
+        **row_filter_arguments(),
+    )
+    diagnoses_str = OrderedDjangoFilterConnectionField(
+        DiagnosisGQLType,
+        str=graphene.String(),
+        **row_filter_arguments(),
     )
     medical_items = OrderedDjangoFilterConnectionField(
         ItemGQLType,
         client_mutation_id=graphene.String(),
-        show_history=graphene.Boolean(),
         orderBy=graphene.List(of_type=graphene.String),
         pricelist_uuid=graphene.UUID(),
+        **row_filter_arguments(),
     )
     medical_items_str = OrderedDjangoFilterConnectionField(
         ItemGQLType,
@@ -63,14 +70,15 @@ class Query(graphene.ObjectType):
         date=graphene.Date(),
         orderBy=graphene.List(of_type=graphene.String),
         pricelist_uuid=graphene.UUID(),
+        **row_filter_arguments(),
     )
 
     medical_services = OrderedDjangoFilterConnectionField(
         ServiceGQLType,
         client_mutation_id=graphene.String(),
-        show_history=graphene.Boolean(),
         orderBy=graphene.List(of_type=graphene.String),
         pricelist_uuid=graphene.UUID(),
+        **row_filter_arguments(),
     )
     medical_services_str = OrderedDjangoFilterConnectionField(
         ServiceGQLType,
@@ -78,6 +86,7 @@ class Query(graphene.ObjectType):
         date=graphene.Date(),
         orderBy=graphene.List(of_type=graphene.String),
         pricelist_uuid=graphene.UUID(),
+        **row_filter_arguments(),
     )
     validate_item_code = graphene.Field(
         graphene.Boolean,
@@ -91,29 +100,43 @@ class Query(graphene.ObjectType):
     )
 
     def resolve_diagnoses_str(self, info, **kwargs):
-        if not info.context.user.has_perms(MedicalConfig.gql_query_diagnosis_perms):
+        # gql_query_diagnosis_perms is [] (open to authenticated users, OMT-281);
+        # has_perms([]) is True even for AnonymousUser, so refuse anonymous first
+        if info.context.user.is_anonymous or not info.context.user.has_perms(
+                MedicalConfig.gql_query_diagnosis_perms):
             raise PermissionDenied(_("unauthorized"))
+        # legacy: live diagnoses only
+        legacy_row_filters(info, kwargs, validity=Validity.NOW)
         search_str = kwargs.get('str')
         if search_str is not None:
             return Diagnosis.objects \
-                .filter(*filter_validity()) \
                 .filter(Q(code__icontains=search_str) | Q(name__icontains=search_str))
         else:
-            return Diagnosis.objects.filter(*filter_validity())
+            return Diagnosis.objects.all()
 
     def resolve_diagnoses(self, info, **kwargs):
-        if not info.context.user.has_perms(MedicalConfig.gql_query_diagnosis_perms):
+        # gql_query_diagnosis_perms is [] (open to authenticated users, OMT-281);
+        # has_perms([]) is True even for AnonymousUser, so refuse anonymous first
+        if info.context.user.is_anonymous or not info.context.user.has_perms(
+                MedicalConfig.gql_query_diagnosis_perms):
             raise PermissionDenied(_("unauthorized"))
-        return Diagnosis.objects.filter(*filter_validity())
+        # legacy: live diagnoses only
+        legacy_row_filters(info, kwargs, validity=Validity.NOW)
+        return Diagnosis.objects.all()
 
     def resolve_medical_items_str(self, info, pricelist_uuid=None, date=None, **kwargs):
         # OMT-281 allow listing of medical services even if the query right is not given
         # if not info.context.user.has_perms(MedicalConfig.gql_query_medical_items_perms):
         if info.context.user.is_anonymous:
             raise PermissionDenied(_("unauthorized"))
+        # live items, or those valid on `date` (business validity, history copies
+        # included). The legacy filter_validity(date) meant this but passed the date
+        # as the argument *name*, so it always returned the live rows.
+        legacy_row_filters(
+            info, kwargs, validity=Validity.at(date) if date is not None else Validity.NOW)
         search_str = kwargs.get("str")
         health_facility_id = kwargs.get("health_facility_id", None)
-        q = Item.objects.filter(*filter_validity(date))
+        q = Item.objects.all()
         if pricelist_uuid is not None:
             q = q.filter(pricelist_details__items_pricelist__uuid=pricelist_uuid,
                          pricelist_details__validity_to__isnull=True)
@@ -140,9 +163,15 @@ class Query(graphene.ObjectType):
         if info.context.user.is_anonymous:
             raise PermissionDenied(_("unauthorized"))
         health_facility_id = kwargs.get("health_facility_id", None)
-        queryset = Item.get_queryset(
-            None, user=info.context.user, show_history=show_history
-        )
+        # legacy: live items; showHistory -> every row (deleted and audit copies),
+        # for a user holding the items right only (without it Item.get_queryset
+        # gave the live rows). The type hook applies row security and the rows.
+        if show_history and info.context.user.has_perms(
+                MedicalConfig.gql_query_medical_items_perms):
+            legacy_row_filters(info, kwargs, validity=Validity.ALL, audits=Audits.ALL)
+        else:
+            legacy_row_filters(info, kwargs, validity=Validity.NOW)
+        queryset = Item.objects.all()
         if pricelist_uuid is not None:
             queryset = queryset.filter(
                 pricelist_details__items_pricelist__uuid=pricelist_uuid
@@ -151,8 +180,6 @@ class Query(graphene.ObjectType):
             queryset = queryset.filter(
                 mutations__mutation__client_mutation_id=client_mutation_id
             )
-        if not show_history:
-            queryset = queryset.filter(*filter_validity(**kwargs))
         if health_facility_id is not None:
             queryset = queryset.filter(
                 Q(health_facility_id=health_facility_id) |
@@ -167,9 +194,14 @@ class Query(graphene.ObjectType):
         # if not info.context.user.has_perms(MedicalConfig.gql_query_medical_services_perms):
         if info.context.user.is_anonymous:
             raise PermissionDenied(_("unauthorized"))
+        # live services, or those valid on `date` (business validity, history copies
+        # included). The legacy filter_validity(date) meant this but passed the date
+        # as the argument *name*, so it always returned the live rows.
+        legacy_row_filters(
+            info, kwargs, validity=Validity.at(date) if date is not None else Validity.NOW)
         search_str = kwargs.get("str")
         health_facility_id = kwargs.get("health_facility_id", None)
-        q = Service.objects.filter(*filter_validity(date))
+        q = Service.objects.all()
         if pricelist_uuid is not None:
             q = q.filter(pricelist_details__services_pricelist__uuid=pricelist_uuid,
                          pricelist_details__validity_to__isnull=True)
@@ -195,9 +227,15 @@ class Query(graphene.ObjectType):
         if info.context.user.is_anonymous:
             raise PermissionDenied(_("unauthorized"))
         health_facility_id = kwargs.get("health_facility_id", None)
-        queryset = Service.get_queryset(
-            None, user=info.context.user, show_history=show_history
-        )
+        # legacy: live services; showHistory -> every row (deleted and audit copies),
+        # for a user holding the services right only (without it Service.get_queryset
+        # gave the live rows). The type hook applies row security and the rows.
+        if show_history and info.context.user.has_perms(
+                MedicalConfig.gql_query_medical_services_perms):
+            legacy_row_filters(info, kwargs, validity=Validity.ALL, audits=Audits.ALL)
+        else:
+            legacy_row_filters(info, kwargs, validity=Validity.NOW)
+        queryset = Service.objects.all()
         if pricelist_uuid is not None:
             queryset = queryset.filter(
                 pricelist_details__services_pricelist__uuid=pricelist_uuid
@@ -206,8 +244,6 @@ class Query(graphene.ObjectType):
             queryset = queryset.filter(
                 mutations__mutation__client_mutation_id=client_mutation_id
             )
-        if not show_history:
-            queryset = queryset.filter(*filter_validity(**kwargs))
         if health_facility_id is not None:
             queryset = queryset.filter(
                 Q(health_facility_id=health_facility_id) |

@@ -3,14 +3,15 @@ import json
 from dataclasses import dataclass
 
 from core.models import User
-from core.test_helpers import create_test_interactive_user
+from core.test_helpers import create_test_interactive_user, create_enrolment_officer_role
 from django.conf import settings
 from graphene_django.utils.testing import GraphQLTestCase
 from graphql_jwt.shortcuts import get_token
 from medical.models import Item, ServiceItem, ServiceService
 from medical.test_helpers import create_test_item, create_test_service
-from rest_framework import status
+from medical.utils import item_create_hook, service_create_hook
 from program.test_helpers import create_test_program
+from rest_framework import status
 
 # from openIMIS import schema
 
@@ -32,15 +33,20 @@ class MedicalGQLTestCase(GraphQLTestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.AUTH_HEADER = settings.GRAPHQL_JWT.get('JWT_AUTH_HEADER_PREFIX', 'Bearer')
+        # items and services are mandatorily attached to a program
+        cls.program = create_test_program()
         cls.admin_user = create_test_interactive_user(username="testMedicalAdmin")
         cls.admin_token = get_token(cls.admin_user, DummyContext(user=cls.admin_user))
-        cls.noright_user = create_test_interactive_user(username="testMedicalNoRight", roles=[1])
+        cls.noright_user = create_test_interactive_user(username="testMedicalNoRight", roles=[create_enrolment_officer_role().id])
         cls.noright_token = get_token(cls.noright_user, DummyContext(user=cls.noright_user))
         cls.test_item_hist = create_test_item(item_type="M", custom_props={
             "name": "Test history API", "code": "TSTAP9"})
         cls.test_item_hist.save_history()
         cls.test_item = create_test_item(item_type="M", custom_props={
             "name": "Test name API", "code": "TSTAP0", "package": "box of 12"})
+        cls.test_service_hist = create_test_service(category="A", custom_props={
+            "name": "Test service history API", "code": "TSVAP9"})
+        cls.test_service_hist.save_history()
         cls.test_service = create_test_service(category="A", custom_props={
             "name": "Test svc API", "code": "SVCAP0", "level": "C"})
         cls.test_item_update = create_test_item(item_type="M", custom_props={
@@ -51,10 +57,6 @@ class MedicalGQLTestCase(GraphQLTestCase):
             "name": "Test update API", "code": "TSTAP5", "package": "box of 1"})
         cls.test_service_delete = create_test_service(category="A", custom_props={
             "name": "Test update API", "code": "SVCAP5", "level": "C"})
-        cls.test_program = create_test_program(
-            code="PRG00M",
-            name="Test Program"
-        )
 
     def _getItemFromAPI(self, code):
         response = self.query(
@@ -192,14 +194,14 @@ class MedicalGQLTestCase(GraphQLTestCase):
         Unlike some other modules, medical services and items are available to everyone but limited,
         i.e. no showHistory so we're accessing a modified service and make sure that history is not available.
         """
-        query = 'query { medicalServices(showHistory: true, code:"M1") { edges { node { id name } } } }'
+        query = 'query { medicalServices(showHistory: true, code:"%s") { edges { node { id name } } } }' % self.test_service_hist.code
         response = self.query(query, headers={"HTTP_AUTHORIZATION": f"{self.AUTH_HEADER} {self.noright_token}"})
         response_admin = self.query(query, headers={"HTTP_AUTHORIZATION": f"{self.AUTH_HEADER} {self.admin_token}"})
 
         content = json.loads(response.content)
         content_admin = json.loads(response_admin.content)
         self.assertEqual(len(content["data"]["medicalServices"]["edges"]), 1)
-        self.assertEqual(len(content_admin["data"]["medicalServices"]["edges"]), 1)
+        self.assertEqual(len(content_admin["data"]["medicalServices"]["edges"]), 2)
 
     def test_no_right_items_query(self):
         """
@@ -301,8 +303,7 @@ class MedicalGQLTestCase(GraphQLTestCase):
                 clientMutationId
               }
             }
-            '''
-            % self.test_program.idProgram,
+            ''' % self.program.idProgram,
             headers={"HTTP_AUTHORIZATION": f"{self.AUTH_HEADER} {self.admin_token}"},
         )
 
@@ -347,10 +348,7 @@ class MedicalGQLTestCase(GraphQLTestCase):
                 clientMutationId
               }
             }
-            ''' 
-            % (self.test_item_update.uuid,
-               self.test_program.idProgram
-            ),
+            ''' % (self.test_item_update.uuid, self.program.idProgram),
             headers={"HTTP_AUTHORIZATION": f"{self.AUTH_HEADER} {self.admin_token}"},
         )
 
@@ -391,10 +389,7 @@ class MedicalGQLTestCase(GraphQLTestCase):
                 clientMutationId
               }
             }
-            ''' 
-            %(self.test_service_update.uuid,
-                self.test_program.idProgram
-            ),
+            ''' % (self.test_service_update.uuid, self.program.idProgram),
             headers={"HTTP_AUTHORIZATION": f"{self.AUTH_HEADER} {self.admin_token}"},
         )
 
@@ -503,12 +498,8 @@ class MedicalGQLTestCase(GraphQLTestCase):
                 clientMutationId
               }
             }
-            ''' % (
-                self.test_service_update.uuid,
-                self.test_program.idProgram,
-                self.test_service.id,
-                self.test_item.id
-                ),
+            ''' % (self.test_service_update.uuid, self.program.idProgram,
+                   self.test_service.id, self.test_item.id),
             headers={"HTTP_AUTHORIZATION": f"{self.AUTH_HEADER} {self.admin_token}"},
         )
         self.test_service_update.refresh_from_db()
